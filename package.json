@@ -36,7 +36,8 @@
     "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d build/docs",
     "version": "standard-version",
     "reset-hard": "git clean -dfx && git reset --hard && npm i",
-    "prepare-release": "run-s reset-hard test cov:check doc:html version doc:publish"
+    "prepare-release": "run-s reset-hard test cov:check doc:html version doc:publish",
+    "deploy": "git push heroku master"
   },
   "engines": {
     "node": ">=10"
@@ -46,11 +47,13 @@
     "@types/babar": "^0.2.0",
     "babar": "^0.2.0",
     "commander": "^7.2.0",
+    "express": "^4.17.1",
     "tcharts.js": "0.0.4"
   },
   "devDependencies": {
     "@ava/typescript": "^1.1.1",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@types/express": "^4.17.11",
     "@types/node": "^14.14.41",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",

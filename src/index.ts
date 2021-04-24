@@ -1,5 +1,3 @@
-import { Command } from 'commander';
-import { truncate } from 'node:fs';
 const babar = require('babar');
 
 export * from './lib/async';
@@ -11,10 +9,6 @@ const barChartConfig = {
   yFractions: 0,
   xFractions: 0,
 };
-
-const program = new Command();
-
-const buckets = [3, 1, 6, 4, 8, 9];
 
 // console.log(
 //   babar(
@@ -75,6 +69,7 @@ function updateNeighbours(buckets: number[], neighbours: number[]) {
   if (neighbours.length < 1) {
     return result;
   }
+  return result;
 }
 
 function flowRight(buckets: number[], index: number) {
@@ -98,32 +93,24 @@ function rec(buckets: number[], index: number) {
   }
 }
 
-program
-  .version('0.1.0')
-  .arguments('<hours> ')
-  .description('test command', {
-    hours: 'rain hours',
-  })
-  .action((hours) => {
-    console.log('rain hours:', hours);
+export function runAlgo(hours: number, buckets: number[]) {
+  console.log('rain hours:', hours);
 
+  for (let i = 0; i < buckets.length; i++) {
+    // buckets[i] += hours;
+    // console.log('i: ', buckets.length, validNeighbourIndexes(buckets, i));
+  }
+
+  for (let i = 1; i <= hours; i++) {
+    console.log('hour: ', i);
     for (let i = 0; i < buckets.length; i++) {
-      // buckets[i] += hours;
-      // console.log('i: ', buckets.length, validNeighbourIndexes(buckets, i));
+      console.log('bucket: ', i);
+      rec(buckets, i);
+      console.log(`result bucket ${i}:`, buckets);
     }
+  }
 
-    for (let i = 1; i <= hours; i++) {
-      console.log('hour: ', i);
-      for (let i = 0; i < buckets.length; i++) {
-        console.log('bucket: ', i);
-        rec(buckets, i);
-        console.log(`result bucket ${i}:`, buckets);
-      }
-    }
+  console.log('final result: ', buckets);
 
-    console.log('final result: ', buckets);
-
-    console.log(babar(prepareForChart(buckets), barChartConfig));
-  });
-
-program.parse();
+  console.log(babar(prepareForChart(buckets), barChartConfig));
+}
