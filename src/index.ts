@@ -7,26 +7,14 @@ const babar = require('babar');
 export * from './lib/async';
 export * from './lib/number';
 
+const DEBUG = true;
+
 const barChartConfig = {
   minY: -1,
   minX: 0,
   yFractions: 0,
   xFractions: 0,
 };
-
-// console.log(
-//   babar(
-//     [
-//       [1, 3],
-//       [2, 1],
-//       [3, 6],
-//       [4, 4],
-//       [5, 8],
-//       [6, 9],
-//     ],
-//     barChartConfig
-//   )
-// );
 
 function prepareForChart(buckets: number[]) {
   const result = [];
@@ -111,12 +99,13 @@ function tailWithEqualNeighbours(buckets: number[], index: number) {
   return index === buckets.length - 1 && buckets[index] === buckets[index - 1];
 }
 
+// Edge case: rec index 1, rain 1 [ 7, 7, 6.5, 6.5, 8, 9 ]
+// algo gets stuck in a loop between index 2 and 3
 function rec(buckets: number[], index: number, rain: number) {
-  // if (rain < 0.01) {
-  //   return;
-  // }
+  if (DEBUG) {
+    console.log(`rec index ${index}, rain ${rain}`, buckets);
+  }
 
-  console.log(`rec index ${index}, rain ${rain}`, buckets);
   const canFlowRight = canFlowRightByIndex(buckets, index);
   const canFlowLeft = canFlowLeftByIndex(buckets, index);
   const leftIsEqual = buckets[index - 1] === buckets[index];
@@ -160,23 +149,27 @@ function rec(buckets: number[], index: number, rain: number) {
     const newValue = buckets[index] + rain;
 
     // Checking if adding rain to current position
-    // will need to flow some water to the sides
+    // will need to overflow some water to the sides
     if (canFlowLeftByValue(buckets, index, newValue)) {
       const difference = newValue - buckets[index - 1];
       buckets[index] = newValue - difference;
 
-      console.log(
-        `difference for left! ${newValue}, ${difference} / ${index} > ${buckets}`
-      );
+      if (DEBUG) {
+        console.log(
+          `Difference for left! ${newValue}, ${difference} / ${index} > ${buckets}`
+        );
+      }
 
       rec(buckets, index - 1, difference);
     } else if (canFlowRightByValue(buckets, index, newValue)) {
       const difference = newValue - buckets[index + 1];
       buckets[index] = newValue - difference;
 
-      console.log(
-        `difference for right! ${newValue}, ${difference} / ${index} > ${buckets}`
-      );
+      if (DEBUG) {
+        console.log(
+          `Difference for right! ${newValue}, ${difference} / ${index} > ${buckets}`
+        );
+      }
 
       rec(buckets, index + 1, difference);
     } else {
@@ -186,25 +179,31 @@ function rec(buckets: number[], index: number, rain: number) {
 }
 
 export function runAlgo(hours: number, buckets: number[]) {
-  console.log('runAlgo:', hours, buckets);
-
-  // for (let i = 0; i < buckets.length; i++) {
-  // buckets[i] += hours;
-  // console.log('i: ', buckets.length, validNeighbourIndexes(buckets, i));
-  // }
+  if (DEBUG) {
+    console.log('Starting (hours, buckets):', hours, buckets);
+  }
 
   for (let i = 1; i <= hours; i++) {
-    console.log('hour: ', i);
+    if (DEBUG) {
+      console.log('HOUR # ', i);
+    }
     for (let i = 0; i < buckets.length; i++) {
-      console.log('bucket: ', i);
+      if (DEBUG) {
+        console.log('BUCKET # ', i);
+      }
       rec(buckets, i, 1);
-      console.log(`result bucket ${i}:`, buckets);
+
+      if (DEBUG) {
+        console.log(`Result bucket ${i}:`, buckets);
+      }
     }
   }
 
-  console.log('final result: ', buckets);
+  if (DEBUG) {
+    console.log('Final Result: ', buckets);
 
-  console.log(babar(prepareForChart(buckets), barChartConfig));
+    console.log(babar(prepareForChart(buckets), barChartConfig));
+  }
 
   return buckets;
 }

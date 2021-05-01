@@ -8,20 +8,12 @@ const app = express();
 // app.use(express.static('public'));
 app.use(express.json());
 
-// define the first route
-app.get('/', function (req, res) {
-  console.log(req.body);
-  // res.json(req.body)
-  res.send('<h1>Hello World! ' + JSON.stringify(req.body) + '</h1>');
-});
-
 app.post('/', function (req, res) {
   const { rain, buckets } = req.body;
   console.log(rain, buckets);
 
   const result = runAlgo(rain, buckets);
 
-  // res.send(JSON.stringify({ ...req.body, rain: 2 }));
   res.json(result);
 });
 
