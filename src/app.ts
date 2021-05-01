@@ -12,9 +12,13 @@ app.post('/', function (req, res) {
   const { rain, buckets } = req.body;
   console.log(rain, buckets);
 
-  const result = runAlgo(rain, buckets);
+  try {
+    const result = runAlgo(rain, buckets);
 
-  res.json(result);
+    res.json(result);
+  } catch (e) {
+    res.json({ error: 'Error running algorithm.' });
+  }
 });
 
 // start the server listening for requests
