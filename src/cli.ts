@@ -11,8 +11,11 @@ program
     hours: 'rain hours',
     buckets: 'landscape array as string: "[1, 2, 3]"',
   })
+  .option('-d, --debug', 'debugging')
   .action((hours, buckets) => {
-    runAlgo(hours, JSON.parse(buckets));
+    const result = runAlgo(hours, JSON.parse(buckets));
+
+    console.log('Result: ', result);
   });
 
 program.parse();

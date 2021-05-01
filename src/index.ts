@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable no-empty */
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 const babar = require('babar');
 
 export * from './lib/async';
 export * from './lib/number';
 
-const DEBUG = true;
+const DEBUG = false;
 
 const barChartConfig = {
   minY: -1,
@@ -22,34 +20,6 @@ function prepareForChart(buckets: number[]) {
     result.push([i + 1, buckets[i]]);
   }
   return result;
-}
-
-function validNeighbourIndexes(buckets: number[], currentIndex: number) {
-  const result: number[] = [];
-  if (canFlowLeftByIndex(buckets, currentIndex)) {
-    result.push(currentIndex - 1);
-  }
-
-  if (canFlowRightByIndex(buckets, currentIndex)) {
-    result.push(currentIndex + 1);
-  }
-
-  return result;
-}
-
-function amountToFlow(bucketValue: number, rain: number) {}
-
-function updateNeighbours(buckets: number[], neighbours: number[]) {
-  const result = [...buckets];
-  if (neighbours.length < 1) {
-    return result;
-  }
-  return result;
-}
-
-function flowRight(buckets: number[], index: number) {
-  if (canFlowRightByIndex(buckets, index)) {
-  }
 }
 
 function canFlowRightByValue(
@@ -99,8 +69,64 @@ function tailWithEqualNeighbours(buckets: number[], index: number) {
   return index === buckets.length - 1 && buckets[index] === buckets[index - 1];
 }
 
-// Edge case: rec index 1, rain 1 [ 7, 7, 6.5, 6.5, 8, 9 ]
-// algo gets stuck in a loop between index 2 and 3
+function handleRainOverflow(
+  buckets: number[],
+  index: number,
+  newValue: number,
+  canOverflowLeft: boolean,
+  canOverflowRight: boolean
+) {
+  if (canOverflowLeft && canOverflowRight) {
+    const differenceLeft = newValue - buckets[index - 1];
+    const differenceRight = newValue - buckets[index + 1];
+
+    if (DEBUG) {
+      console.log(
+        `Difference for BOTH! i=${index} val=${newValue} left=${differenceLeft} right=${differenceRight} buckets=${buckets}`
+      );
+    }
+
+    if (differenceLeft > differenceRight) {
+      // This means left value is lower than right
+      buckets[index] = newValue - differenceLeft;
+      rec(buckets, index - 1, differenceLeft);
+    } else if (differenceRight > differenceLeft) {
+      // This means right value is lower than left
+      buckets[index] = newValue - differenceRight;
+      rec(buckets, index + 1, differenceRight);
+    } else {
+      // This means differenceRight === differenceLeft
+      // TODO could split difference by 3 (left, current, right)...
+
+      buckets[index] = newValue - differenceRight;
+      rec(buckets, index + 1, differenceRight / 2);
+      rec(buckets, index - 1, differenceRight / 2);
+    }
+  } else if (canOverflowLeft) {
+    const difference = newValue - buckets[index - 1];
+    buckets[index] = newValue - difference;
+
+    if (DEBUG) {
+      console.log(
+        `Difference for left! ${newValue}, ${difference} / ${index} > ${buckets}`
+      );
+    }
+
+    rec(buckets, index - 1, difference);
+  } else if (canOverflowRight) {
+    const difference = newValue - buckets[index + 1];
+    buckets[index] = newValue - difference;
+
+    if (DEBUG) {
+      console.log(
+        `Difference for right! ${newValue}, ${difference} / ${index} > ${buckets}`
+      );
+    }
+
+    rec(buckets, index + 1, difference);
+  }
+}
+
 function rec(buckets: number[], index: number, rain: number) {
   if (DEBUG) {
     console.log(`rec index ${index}, rain ${rain}`, buckets);
@@ -112,66 +138,50 @@ function rec(buckets: number[], index: number, rain: number) {
   const rightIsEqual = buckets[index + 1] === buckets[index];
 
   if (headWithEqualNeighbours(buckets, index)) {
-    // This is when index is the head and the neighbour value is equal
+    // This is when index is the head (first index) and the neighbour value is equal
     buckets[index] += rain / 2;
     buckets[index + 1] += rain / 2;
-    console.log('head');
   } else if (tailWithEqualNeighbours(buckets, index)) {
-    // This is when index is the tail and the neighbour value is equal
+    // This is when index is the tail (last index) and the neighbour value is equal
     buckets[index] += rain / 2;
     buckets[index - 1] += rain / 2;
-    console.log('tail');
   } else if (canFlowRight && canFlowLeft) {
     if (rightIsEqual && !leftIsEqual) {
-      console.log(1);
+      // This means that right is equal to current position
+      // but left is lower, so we go left
 
-      // go left
       rec(buckets, index - 1, rain);
     } else if (leftIsEqual && !rightIsEqual) {
-      console.log(2);
-      // go right
+      // This means that left is equal to current position
+      // but right is lower, so we go right
+
       rec(buckets, index + 1, rain);
     } else {
-      console.log(3);
-      // split in half
-      // rec(buckets, index + 1, rain / 2);
-      // rec(buckets, index - 1, rain / 2);
+      // Current position is equal to BOTH neighbours
+      // TODO: could split by 3 (left, current, right)...
+
       buckets[index - 1] += rain / 2;
       buckets[index + 1] += rain / 2;
     }
   } else if (canFlowRight) {
-    // console.log(`flowright index ${index} value ${buckets[index]}`);
     rec(buckets, index + 1, rain);
   } else if (canFlowLeft) {
     rec(buckets, index - 1, rain);
   } else if (!canFlowRight && !canFlowLeft) {
-    // console.log(`sum index ${index}`);
     const newValue = buckets[index] + rain;
+    const canOverflowLeft = canFlowLeftByValue(buckets, index, newValue);
+    const canOverflowRight = canFlowRightByValue(buckets, index, newValue);
 
     // Checking if adding rain to current position
     // will need to overflow some water to the sides
-    if (canFlowLeftByValue(buckets, index, newValue)) {
-      const difference = newValue - buckets[index - 1];
-      buckets[index] = newValue - difference;
-
-      if (DEBUG) {
-        console.log(
-          `Difference for left! ${newValue}, ${difference} / ${index} > ${buckets}`
-        );
-      }
-
-      rec(buckets, index - 1, difference);
-    } else if (canFlowRightByValue(buckets, index, newValue)) {
-      const difference = newValue - buckets[index + 1];
-      buckets[index] = newValue - difference;
-
-      if (DEBUG) {
-        console.log(
-          `Difference for right! ${newValue}, ${difference} / ${index} > ${buckets}`
-        );
-      }
-
-      rec(buckets, index + 1, difference);
+    if (canOverflowLeft || canOverflowRight) {
+      handleRainOverflow(
+        buckets,
+        index,
+        newValue,
+        canOverflowLeft,
+        canOverflowRight
+      );
     } else {
       buckets[index] = newValue;
     }
@@ -200,8 +210,6 @@ export function runAlgo(hours: number, buckets: number[]) {
   }
 
   if (DEBUG) {
-    console.log('Final Result: ', buckets);
-
     console.log(babar(prepareForChart(buckets), barChartConfig));
   }
 
